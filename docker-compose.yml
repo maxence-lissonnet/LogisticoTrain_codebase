@@ -1,0 +1,45 @@
+services:
+  sqldatabase:
+    image: mariadb:11
+    restart: always
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh", "--connect"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    volumes:
+     - sqldb-data:/var/lib/mysql
+     - ./initialisation_db:/docker-entrypoint-initdb.d:ro
+    networks:
+      - db-net
+    secrets :
+      - identifiant-sql-secrets
+
+  nosqldatabase:
+    image: mongodb:6.0 
+    restart: always
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    volumes:
+      - nosqldb-data:/data/db*
+    networks:
+      - db-net
+    secrets :
+      - identifiant-nosql-secrets
+
+
+volumes:
+  sqldb-data:
+  nosqldb-data:
+
+networks:
+  db-net:
+
+secrets:
+  identifiant-sql-secrets:
+    file: ./secrets/identifiant-sql-secrets.txt
+  identifiant-nosql-secrets:
+    file: ./secrets/identifiant-nosql-secrets.txt
