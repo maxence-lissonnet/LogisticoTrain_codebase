@@ -7,6 +7,8 @@ services:
       interval: 10s
       timeout: 10s
       retries: 10
+    environment:
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/identifiant-sql-secrets
     volumes:
      - sqldb-data:/var/lib/mysql
      - ./initialisation_db:/docker-entrypoint-initdb.d:ro
@@ -23,12 +25,42 @@ services:
       interval: 10s
       timeout: 10s
       retries: 10
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root 
+      - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/identifiant-nosql-secrets      
     volumes:
-      - nosqldb-data:/data/db*
+      - nosqldb-data:/data/db
     networks:
       - db-net
     secrets :
       - identifiant-nosql-secrets
+
+# Partie Soutien au dev et à l'admin
+  phpmyadmin:
+    image: phpmyadmin:latest
+    profiles: ["dev-tool"] 
+    ports:
+      - "127.0.0.1:8081:80" 
+    environment:
+      - PMA_HOST=sqldatabase
+    networks:
+      - db-net 
+    depends_on:
+      - sqldatabase
+
+  mongo-express:
+    image: mongo-express:latest
+    profiles: ["dev-tool"]
+    ports:
+      - "127.0.0.1:8082:8081"
+    networks:
+      - db-net
+    depends_on:
+      nosqldatabase:
+        condition: service_healthy
+    secrets:
+      - source: mongo_express_config
+        target: /app/config.js
 
 
 volumes:
@@ -43,3 +75,5 @@ secrets:
     file: ./secrets/identifiant-sql-secrets.txt
   identifiant-nosql-secrets:
     file: ./secrets/identifiant-nosql-secrets.txt
+  mongo_express_config:
+    file: ./secrets/mongo-express-config.js
