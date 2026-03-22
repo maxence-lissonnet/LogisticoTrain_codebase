@@ -1,4 +1,6 @@
 services:
+
+# <========================================================Partie base de données========================================================>
   sqldatabase:
     image: mariadb:11
     restart: always
@@ -35,7 +37,7 @@ services:
     secrets:
       - identifiant-nosql-secrets
 
-# Partie Soutien au dev et à l'admin
+# <========================================================Partie Soutien au dev et à l'admin========================================================>
   phpmyadmin:
     image: phpmyadmin:latest
     profiles: ["dev-tool"] 
@@ -62,6 +64,7 @@ services:
       - source: mongo_express_config
         target: /app/config.js
 
+# <========================================================Partie Application et API========================================================>
   broker:
     image: rabbitmq:3.12-management-alpine
     container_name: logistico-broker
@@ -94,6 +97,8 @@ services:
     secrets:
       - db_prod_creds
       - db_history_creds
+
+
 
 volumes:
   sqldb-data:
