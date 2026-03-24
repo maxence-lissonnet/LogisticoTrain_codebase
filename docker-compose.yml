@@ -4,7 +4,7 @@ services:
   sqldatabase:
     image: mariadb:11
     restart: always
-    healthcheck:
+    healthcheck: 
       test: [ "CMD", "/usr/local/bin/healthcheck.sh", "--connect" ]
       interval: 10s
       timeout: 10s
