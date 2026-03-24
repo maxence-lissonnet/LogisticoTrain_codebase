@@ -1,0 +1,34 @@
+--- a/RealtimeAPI/src/main/java/rtApi/controllers/RameAccessWSController.java
++++ b/RealtimeAPI/src/main/java/rtApi/controllers/RameAccessWSController.java
+@@
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.messaging.handler.annotation.DestinationVariable;
+ import org.springframework.messaging.handler.annotation.MessageMapping;
+ import org.springframework.messaging.handler.annotation.Payload;
++import org.springframework.messaging.simp.SimpMessagingTemplate;
+ import org.springframework.stereotype.Controller;
+@@
+ public class RameAccessWSController {
+     private static final Log LOG = LogFactory.getLog(RameAccessWSController.class);
+     private final RameAccessService rameAccessSvc;
++    private final SimpMessagingTemplate messagingTemplate;
+
+     @Autowired
+-    public RameAccessWSController(RameAccessService rameAccessSvc) {
++    public RameAccessWSController(RameAccessService rameAccessSvc, SimpMessagingTemplate messagingTemplate) {
+         this.rameAccessSvc = rameAccessSvc;
++        this.messagingTemplate = messagingTemplate;
+     }
+@@
+         LOG.info("Receive request for rame " + message.getNumSerie());
+         this.rameAccessSvc.askRameEntrance(message);
++        this.messagingTemplate.convertAndSend("/topic/rameaccess", message);
+         return message;
+     }
+@@
+         LOG.info("Receive answer for rame " + numSerie);
+         Rame rame = this.rameAccessSvc.answerRameEntranceRequest(message);
++        this.messagingTemplate.convertAndSend("/topic/rameaccess", message);
+         return message;
+     }
+ }

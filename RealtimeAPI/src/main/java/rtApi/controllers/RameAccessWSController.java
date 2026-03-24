@@ -8,12 +8,13 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
 package rtApi.controllers;
 
 import org.apache.commons.logging.Log;
@@ -22,14 +23,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+
 import rtApi.model.Rame;
 import rtApi.services.RameAccessService;
 import rtApi.services.messages.RameEntranceAnswer;
 import rtApi.services.messages.RameEntranceRequest;
 
 /**
- *
  * @author Rémi Venant
  */
 @Controller
@@ -37,11 +39,14 @@ import rtApi.services.messages.RameEntranceRequest;
 public class RameAccessWSController {
 
     private static final Log LOG = LogFactory.getLog(RameAccessWSController.class);
+
     private final RameAccessService rameAccessSvc;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Autowired
-    public RameAccessWSController(RameAccessService rameAccessSvc) {
+    public RameAccessWSController(RameAccessService rameAccessSvc, SimpMessagingTemplate messagingTemplate) {
         this.rameAccessSvc = rameAccessSvc;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @MessageMapping
@@ -50,10 +55,11 @@ public class RameAccessWSController {
             LOG.warn("Received null message on RameAccessWSController:request");
             throw new IllegalArgumentException("Missing message");
         }
+
         LOG.info("Receive request for rame " + message.getNumSerie());
         this.rameAccessSvc.askRameEntrance(message);
+        this.messagingTemplate.convertAndSend("/topic/rameaccess", message);
         return message;
-        //this.realtimeNotifSvc.notifyRameEntranceRequest(message);
     }
 
     @MessageMapping("{numSerie:[a-zA-Z0-9]{1,12}}")
@@ -62,13 +68,15 @@ public class RameAccessWSController {
             LOG.warn("Received null message on RameAccessWSController:answer");
             throw new IllegalArgumentException("Missing message");
         }
+
         if (!numSerie.equals(message.getNumSerie())) {
-            LOG.warn("Mismatch numSerie path component  with message.numSerie");
-            throw new IllegalArgumentException("Mismatch numSerie path component  with message.numSerie");
+            LOG.warn("Mismatch numSerie path component with message.numSerie");
+            throw new IllegalArgumentException("Mismatch numSerie path component with message.numSerie");
         }
+
         LOG.info("Receive answer for rame " + numSerie);
         Rame rame = this.rameAccessSvc.answerRameEntranceRequest(message);
+        this.messagingTemplate.convertAndSend("/topic/rameaccess", message);
         return message;
-        //this.realtimeNotifSvc.notifyRameEntranceAnswer(rame.getConducteurEntrant(), message);
     }
 }
