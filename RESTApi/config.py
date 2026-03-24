@@ -1,27 +1,18 @@
-# BASE SERVER CONFIGURATION
-# General
-# use 0.0.0.0:5000 for a docker deployment
-SERVER_HOST = '127.0.0.1'
-SERVER_PORT = 5001
-DEBUG = False
-# CORS Configuration
-ENABLE_CORS = True  # Enable CORS compliancy only if the front app is served by another server (mostly in dev. conf)
+import os
 
-# SQL PRODUCTION DB CONNECTION CONFIGURATION
-SQLDB_SETTINGS = {
-    "db": 'myrames-prod-db',  # mandatory
-    "user": 'mariaUsr',  # mandatory
-    "password": 'mariaPwd',  # mandatory
-    "host": '127.0.0.1',  # default localhost
-    "port": 3306  # default 3306
-}
+SERVER_HOST = os.getenv("SERVER_HOST", "0.0.0.0")
+SERVER_PORT = int(os.getenv("SERVER_PORT", 5001))
 
-# MONGODB HISOTRY DB CONNECTION CONFIGURATION
-MONGODB_SETTINGS = {
-    "db": "history-db",  # Mandatory
-    "host": "localhost",  # default localhost
-    "port": 27017,  # default 27017
-    "username": "mongoUsr",  # Optional
-    "password": "mongoPass",  # Optional
-    "authentication_source": "admin"  # default is the db
-}
+# MYSQL
+MYSQL_HOST = os.getenv("MYSQL_HOST", "sqldatabase")
+MYSQL_PORT = int(os.getenv("MYSQL_PORT", 3306))
+MYSQL_USER = os.getenv("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
+MYSQL_DB = os.getenv("MYSQL_DB", "logistico")
+
+# MONGO
+MONGO_HOST = os.getenv("MONGO_HOST", "nosqldatabase")
+MONGO_PORT = int(os.getenv("MONGO_PORT", 27017))
+MONGO_DB = os.getenv("MONGO_DB", "logistico")
+
+DEBUG = os.getenv("DEBUG", "False") == "True"

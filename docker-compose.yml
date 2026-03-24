@@ -63,6 +63,11 @@ services:
     secrets:
       - source: mongo_express_config
         target: /app/config.js
+    healthcheck:
+      test: ["CMD", "mongosh", "-u", "root", "-p", "$$(cat /run/secrets/mongo_root_password)", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
   # <========================================================Partie Application et API========================================================>
   broker:
@@ -83,6 +88,13 @@ services:
     secrets:
       - rabbit_user
       - rabbit_password
+    command: >
+      sh -c "
+      rabbitmq-plugins enable --offline rabbitmq_stomp rabbitmq_web_stomp &&
+      rabbitmq-server
+      "
+    ports:
+      - "61613:61613"
 
   restapi:
     build: ./RESTApi
@@ -99,6 +111,10 @@ services:
     secrets:
       - db_prod_creds
       - db_history_creds
+    environment:
+      SERVER_HOST: 0.0.0.0
+      MYSQL_HOST: sqldatabase
+      MONGO_HOST: nosqldatabase
 
   wsapi:
     image: maven:3.9.9-eclipse-temurin-21
@@ -137,6 +153,9 @@ services:
       - ./app:/workspace
       - webapp-node-modules:/workspace/node_modules
       - webapp-build:/workspace/build
+    environment:
+      API_EP_URI: http://front/api
+      RT_API_EP_URI: http://front/wsapi
 
   front:
     image: nginx:1.27-alpine

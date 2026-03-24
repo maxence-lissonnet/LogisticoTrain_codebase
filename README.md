@@ -1,9 +1,20 @@
 # LogisticoTrain
 
-```
-docker compose build --pull
-docker compose --profile dev-tool up -d
-```
+**build images**
+> docker compose build --pull
+
+**build frontend**
+> docker compose run --rm webapp npm audit fix --force
+
+> docker compose --profile build run --rm webapp
+
+**lancer stack**
+> docker compose up -d
+
+**optionnel tools**
+> docker compose --profile dev-tool up -d
+
+##
 
 > http://localhost:8080/
 
