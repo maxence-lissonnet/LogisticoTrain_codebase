@@ -13,7 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+RUN chmod +x start-server.sh
+
 RUN python -m compileall .
 
-RUN chmod +x starter.sh
-CMD ["./starter.sh"]
+CMD ["./start-server.sh"]

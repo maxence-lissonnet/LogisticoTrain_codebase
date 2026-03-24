@@ -1,4 +1,6 @@
 services:
+
+  # <========================================================Partie base de données========================================================>
   sqldatabase:
     image: mariadb:11
     container_name: logistico-sqldatabase
@@ -30,42 +32,74 @@ services:
     container_name: logistico-nosqldatabase
     restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_root_password
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/identifiant-nosql-secrets
     volumes:
       - nosqldb-data:/data/db
-    secrets:
-      - mongo_root_password
     networks:
       - db-net
+    secrets:
+      - identifiant-nosql-secrets
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet --host 127.0.0.1 --eval 'db.adminCommand({ ping: 1 })'"]
       interval: 10s
       timeout: 10s
       retries: 10
-      start_period: 20s
 
+  # <========================================================Partie Soutien au dev et à l'admin========================================================>
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: logistico-phpmyadmin
+    profiles: ["dev-tool"]
+    restart: always
+    ports:
+      - "127.0.0.1:8081:80"
+    environment:
+      PMA_HOST: sqldatabase
+      PMA_PORT: 3306
+    networks:
+      - db-net
+    depends_on:
+      sqldatabase:
+        condition: service_healthy
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: logistico-mongo-express
+    profiles: ["dev-tool"]
+    restart: always
+    ports:
+      - "127.0.0.1:8082:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: nosqldatabase
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD_FILE: /run/secrets/mongo_root_password
+      ME_CONFIG_BASICAUTH: "false"
+    secrets:
+      - db_prod_creds
+      - db_history_creds
+
+  # <========================================================Partie Application et API========================================================>
   broker:
     image: rabbitmq:3.12-management-alpine
     container_name: logistico-broker
     restart: always
     command: ["sh", "-lc", "rabbitmq-plugins enable --offline rabbitmq_stomp rabbitmq_web_stomp >/dev/null 2>&1 || true; exec rabbitmq-server"]
     environment:
-      RABBITMQ_DEFAULT_USER_FILE: /run/secrets/rabbitmq_user
-      RABBITMQ_DEFAULT_PASS_FILE: /run/secrets/rabbitmq_password
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_stomp tcp_listeners [6163]"
     volumes:
       - broker-data:/var/lib/rabbitmq
     secrets:
       - rabbitmq_user
       - rabbitmq_password
     networks:
-      - mqt-net
+      - broker-net
     healthcheck:
-      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 20s
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
   restapi:
     build: ./RESTApi
@@ -147,67 +181,28 @@ services:
       timeout: 10s
       retries: 10
 
-  phpmyadmin:
-    image: phpmyadmin:latest
-    container_name: logistico-phpmyadmin
-    profiles: ["dev-tool"]
-    restart: always
-    ports:
-      - "127.0.0.1:8081:80"
-    environment:
-      PMA_HOST: sqldatabase
-      PMA_PORT: 3306
-    networks:
-      - db-net
-    depends_on:
-      sqldatabase:
-        condition: service_healthy
-
-  mongo-express:
-    image: mongo-express:latest
-    container_name: logistico-mongo-express
-    profiles: ["dev-tool"]
-    restart: always
-    ports:
-      - "127.0.0.1:8082:8081"
-    environment:
-      ME_CONFIG_MONGODB_SERVER: nosqldatabase
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD_FILE: /run/secrets/mongo_root_password
-      ME_CONFIG_BASICAUTH: "false"
-    secrets:
-      - mongo_root_password
-    networks:
-      - db-net
-    depends_on:
-      nosqldatabase:
-        condition: service_healthy
-
 volumes:
   sqldb-data:
   nosqldb-data:
   broker-data:
-  wsapi-m2:
-  wsapi-target:
-  webapp-node-modules:
-  webapp-build:
 
 networks:
   db-net:
-  mqt-net:
+  broker-net:
   frontend-net:
 
 secrets:
-  mariadb_root_password:
-    file: ./secrets/mariadb_root_password.txt
-  mariadb_user:
-    file: ./secrets/mariadb_user.txt
-  mariadb_password:
-    file: ./secrets/mariadb_password.txt
-  mongo_root_password:
-    file: ./secrets/mongo_root_password.txt
-  rabbitmq_user:
-    file: ./secrets/rabbitmq_user.txt
-  rabbitmq_password:
-    file: ./secrets/rabbitmq_password.txt
+  identifiant-sql-secrets:
+    file: ./secrets/identifiant-sql-secrets.txt
+  identifiant-nosql-secrets:
+    file: ./secrets/identifiant-nosql-secrets.txt
+  mongo_express_config:
+    file: ./secrets/mongo-express-config.js
+  rabbit_user:
+    file: ./secrets/rabbit_user.txt
+  rabbit_password:
+    file: ./secrets/rabbit_password.txt
+  db_prod_creds:
+    file: ./secrets/db_prod_creds_secrets.txt
+  db_history_creds:
+    file: ./secrets/db_history_creds_secrets.txt
