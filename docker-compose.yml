@@ -3,34 +3,30 @@ services:
   # <========================================================Partie base de données========================================================>
   sqldatabase:
     image: mariadb:11
-    container_name: logistico-sqldatabase
     restart: always
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+    healthcheck:
+      test: [ "CMD", "/usr/local/bin/healthcheck.sh", "--connect" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
     environment:
-      MARIADB_DATABASE: myrames-prod-db
-      MARIADB_USER_FILE: /run/secrets/mariadb_user
-      MARIADB_PASSWORD_FILE: /run/secrets/mariadb_password
-      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/identifiant-sql-secrets
     volumes:
       - sqldb-data:/var/lib/mysql
-      - ./Initialisation_db:/docker-entrypoint-initdb.d:ro
-    secrets:
-      - mariadb_root_password
-      - mariadb_user
-      - mariadb_password
+      - ./initialisation_db:/docker-entrypoint-initdb.d:ro
     networks:
       - db-net
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD --silent"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 20s
+    secrets:
+      - identifiant-sql-secrets
 
   nosqldatabase:
     image: mongo:6.0
-    container_name: logistico-nosqldatabase
     restart: always
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 10
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/identifiant-nosql-secrets
@@ -40,59 +36,38 @@ services:
       - db-net
     secrets:
       - identifiant-nosql-secrets
-    healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --host 127.0.0.1 --eval 'db.adminCommand({ ping: 1 })'"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
 
   # <========================================================Partie Soutien au dev et à l'admin========================================================>
   phpmyadmin:
     image: phpmyadmin:latest
-    container_name: logistico-phpmyadmin
-    profiles: ["dev-tool"]
-    restart: always
+    profiles: [ "dev-tool" ]
     ports:
       - "127.0.0.1:8081:80"
     environment:
-      PMA_HOST: sqldatabase
-      PMA_PORT: 3306
+      - PMA_HOST=sqldatabase
     networks:
       - db-net
     depends_on:
-      sqldatabase:
-        condition: service_healthy
+      - sqldatabase
 
   mongo-express:
     image: mongo-express:latest
-    container_name: logistico-mongo-express
-    profiles: ["dev-tool"]
-    restart: always
+    profiles: [ "dev-tool" ]
     ports:
       - "127.0.0.1:8082:8081"
-    environment:
-      ME_CONFIG_MONGODB_SERVER: nosqldatabase
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD_FILE: /run/secrets/mongo_root_password
-      ME_CONFIG_BASICAUTH: "false"
+    networks:
+      - db-net
+    depends_on:
+      nosqldatabase:
+        condition: service_healthy
     secrets:
-      - db_prod_creds
-      - db_history_creds
+      - source: mongo_express_config
+        target: /app/config.js
 
   # <========================================================Partie Application et API========================================================>
   broker:
     image: rabbitmq:3.12-management-alpine
     container_name: logistico-broker
-    restart: always
-    command: ["sh", "-lc", "rabbitmq-plugins enable --offline rabbitmq_stomp rabbitmq_web_stomp >/dev/null 2>&1 || true; exec rabbitmq-server"]
-    environment:
-      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_stomp tcp_listeners [6163]"
-    volumes:
-      - broker-data:/var/lib/rabbitmq
-    secrets:
-      - rabbitmq_user
-      - rabbitmq_password
     networks:
       - broker-net
     healthcheck:
@@ -100,6 +75,14 @@ services:
       interval: 10s
       timeout: 10s
       retries: 10
+    restart: always
+    environment:
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_stomp tcp_listeners [6163]"
+    volumes:
+      - broker-data:/var/lib/rabbitmq
+    secrets:
+      - rabbit_user
+      - rabbit_password
 
   restapi:
     build: ./RESTApi
@@ -110,16 +93,12 @@ services:
         condition: service_healthy
       nosqldatabase:
         condition: service_healthy
-    volumes:
-      - ./secrets/restapi/config.py:/app/config.py:ro
     networks:
       - db-net
       - frontend-net
-    healthcheck:
-      test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('127.0.0.1',5001),2).close()\""]
-      interval: 10s
-      timeout: 10s
-      retries: 10
+    secrets:
+      - db_prod_creds
+      - db_history_creds
 
   wsapi:
     image: maven:3.9.9-eclipse-temurin-21
@@ -185,11 +164,16 @@ volumes:
   sqldb-data:
   nosqldb-data:
   broker-data:
+  webapp-build:
+  webapp-node-modules:
+  wsapi-m2:
+  wsapi-target:
 
 networks:
   db-net:
   broker-net:
   frontend-net:
+  mqt-net:
 
 secrets:
   identifiant-sql-secrets:
