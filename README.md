@@ -4,8 +4,6 @@
 > docker compose build --pull
 
 **build frontend**
-> docker compose run --rm webapp npm audit fix --force
-
 > docker compose --profile build run --rm webapp
 
 **lancer stack**

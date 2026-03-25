@@ -1,11 +1,8 @@
-FROM node:25-alpine
+FROM node:22-bullseye
 
-WORKDIR /workspace
+WORKDIR /app
 
 COPY . .
 RUN npm install
+RUN npm audit fix
 RUN npm run build
-
-# RUN apt-get update \
-#     && apt-get install -y --no-install-recommends python3 make g++ \
-#     && rm -rf /var/lib/apt/lists/*

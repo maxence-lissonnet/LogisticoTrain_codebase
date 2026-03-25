@@ -4,8 +4,8 @@ services:
   sqldatabase:
     image: mariadb:11
     restart: always
-    healthcheck: 
-      test: [ "CMD", "/usr/local/bin/healthcheck.sh", "--connect" ]
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh", "--connect"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -23,7 +23,7 @@ services:
     image: mongo:6.0
     restart: always
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: ["CMD-SHELL", "mongosh -u root -p \"$(cat /run/secrets/identifiant-nosql-secrets)\" --authenticationDatabase admin --eval \"db.adminCommand({ ping: 1 })\""]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -40,7 +40,7 @@ services:
   # <========================================================Partie Soutien au dev et à l'admin========================================================>
   phpmyadmin:
     image: phpmyadmin:latest
-    profiles: [ "dev-tool" ]
+    profiles: ["dev-tool"]
     ports:
       - "127.0.0.1:8081:80"
     environment:
@@ -52,9 +52,13 @@ services:
 
   mongo-express:
     image: mongo-express:latest
-    profiles: [ "dev-tool" ]
+    profiles: ["dev-tool"]
     ports:
       - "127.0.0.1:8082:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=nosqldatabase
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=root
+      - ME_CONFIG_MONGODB_AUTH_DATABASE=admin
     networks:
       - db-net
     depends_on:
@@ -63,26 +67,19 @@ services:
     secrets:
       - source: mongo_express_config
         target: /app/config.js
-    healthcheck:
-      test: ["CMD", "mongosh", "-u", "root", "-p", "$$(cat /run/secrets/mongo_root_password)", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
 
   # <========================================================Partie Application et API========================================================>
   broker:
     image: rabbitmq:3.12-management-alpine
     container_name: logistico-broker
+    restart: always
     networks:
-      - broker-net
+      - mqt-net
     healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 10s
       retries: 10
-    restart: always
-    environment:
-      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_stomp tcp_listeners [6163]"
     volumes:
       - broker-data:/var/lib/rabbitmq
     secrets:
@@ -148,14 +145,13 @@ services:
     profiles: ["build"]
     user: root
     working_dir: /workspace
-    command: ["sh", "-lc", "npm ci --legacy-peer-deps && PUBLIC_PATH=/ API_BASE_URL=/api RT_API_BASE_URL=/wsapi npm run build"]
+    command: ["sh", "-lc", "npm run build"]
     volumes:
-      - ./app:/workspace
-      - webapp-node-modules:/workspace/node_modules
       - webapp-build:/workspace/build
     environment:
-      API_EP_URI: http://front/api
-      RT_API_EP_URI: http://front/wsapi
+      PUBLIC_PATH: /
+      API_EP_URI: /api
+      RT_API_EP_URI: /wsapi
 
   front:
     image: nginx:1.27-alpine
@@ -184,13 +180,11 @@ volumes:
   nosqldb-data:
   broker-data:
   webapp-build:
-  webapp-node-modules:
   wsapi-m2:
   wsapi-target:
 
 networks:
   db-net:
-  broker-net:
   frontend-net:
   mqt-net:
 
