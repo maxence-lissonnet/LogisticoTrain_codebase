@@ -7,7 +7,7 @@ __all__ = ['Rame']
 
 
 class Rame(Base):
-    __tablename__ = 'rames'
+    __tablename__ = 'Rame'
 
     num_serie: Mapped[str] = mapped_column(String(12), primary_key=True)
     type_rame: Mapped[str] = mapped_column(String(50), nullable=False)

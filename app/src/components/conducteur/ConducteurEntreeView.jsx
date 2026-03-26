@@ -14,6 +14,12 @@ function IntConducteurView() {
   const { main: mainStore } = useContext(RootStore);
   const [formValidated, setFormValidated] = useState(false);
 
+  if (!mainStore) {
+    return (
+      <Alert variant="warning">Chargement en cours...</Alert>
+    );
+  }
+
   const handleSendRequest = (evt) => {
     evt.preventDefault();
     const form = evt.currentTarget;
@@ -95,7 +101,7 @@ function IntConducteurView() {
                       />
                     </ListGroup.Item>
                   )
-          }
+              }
               <ListGroup.Item type="button" action onClick={() => mainStore.addNewTache()}>+</ListGroup.Item>
             </ListGroup>
           </Form.Group>
@@ -103,9 +109,9 @@ function IntConducteurView() {
         </fieldset>
       </Form>
       {
-      mainStore.waitingForAnswer && (
-        <Alert variant="primary">En attente de réponse</Alert>
-      )
+        mainStore.waitingForAnswer && (
+          <Alert variant="primary">En attente de réponse</Alert>
+        )
       }
       {
         mainStore.answer && mainStore.answer.accept && (
@@ -136,14 +142,14 @@ function IntConducteurView() {
         )
       }
       {mainStore.error && (
-      <Alert variant="danger">
-        <Alert.Heading>Erreur de requête</Alert.Heading>
-        <p>
-          {mainStore.error.error ?? 'Erreur inconnue'}
-              &nbsp;:&nbsp;
-          {mainStore.error.message ?? 'Aucun détails fourni sur cette erreur'}
-        </p>
-      </Alert>
+        <Alert variant="danger">
+          <Alert.Heading>Erreur de requête</Alert.Heading>
+          <p>
+            {mainStore.error.error ?? 'Erreur inconnue'}
+            &nbsp;:&nbsp;
+            {mainStore.error.message ?? 'Aucun détails fourni sur cette erreur'}
+          </p>
+        </Alert>
       )}
     </Waiting>
   );

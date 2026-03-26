@@ -182,7 +182,7 @@ class Rame {
       voie: this._numVoie,
       auteur,
     };
-    return ROOT_AX.put(`${APP_ENV_RT_API_BASE_URL}/rest/rames/remove-order`, removeRequest);
+    return ROOT_AX.put(`${APP_ENV_RT_API_BASE_URL}/api/rest/rames/remove-order`, removeRequest);
   }
 
   static async getRames({ onVoieOnly = false } = { onVoieOnly: false }) {

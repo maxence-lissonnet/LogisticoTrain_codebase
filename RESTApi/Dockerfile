@@ -5,6 +5,12 @@ LABEL "org.opencontainers.image.authors"="Hugo Chauvet"
 LABEL "org.opencontainers.image.description"="RestAPI du centre de maintenance"
 LABEL "org.opencontainers.image.title"="restapi:1.0"
 
+RUN apt-get update && apt-get install -y \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY requirements.txt .

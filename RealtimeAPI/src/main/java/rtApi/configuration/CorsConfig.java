@@ -41,9 +41,11 @@ public class CorsConfig {
     @Profile("development")
     CorsConfiguration corsConfiguration() {
         final CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*", "moz-extension://*"));
+        configuration.setAllowedOriginPatterns(
+                Arrays.asList("http://localhost:*", "http://127.0.0.1:*", "moz-extension://*"));
         configuration.setAllowedMethods(Arrays.asList("OPTIONS", "HEAD", "GET", "POST", "PUT", "PATCH", "DELETE"));
-        configuration.setAllowedHeaders(Arrays.asList("content-type", "Accept", "Accept-Language", "Authorization", "X-Requested-With", "x-xsrf-token"));
+        configuration.setAllowedHeaders(Arrays.asList("content-type", "Accept", "Accept-Language", "Authorization",
+                "X-Requested-With", "x-xsrf-token"));
         configuration.setAllowCredentials(Boolean.TRUE);
         return configuration;
     }

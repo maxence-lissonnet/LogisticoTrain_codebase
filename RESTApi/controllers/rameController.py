@@ -21,7 +21,7 @@ def _build_rame_with_taches_representation(rame: Rame, taches: Optional[List[Tac
     return dic_rep
 
 
-@rame_controller.route("/api/v1/rames", methods=['GET'])
+@rame_controller.route("/rames", methods=['GET'])
 def get_rames():
     removable_only = request.args.get('removable')
     on_voie_only = request.args.get('on-voie')
@@ -34,19 +34,19 @@ def get_rames():
     return [_build_rame_with_taches_representation(r) for r in rames]
 
 
-@rame_controller.route("/api/v1/rames/<num_serie>", methods=['GET'])
+@rame_controller.route("/rames/<num_serie>", methods=['GET'])
 def get_rame(num_serie: str):
     with_details = True if 'details' in request.args else False
     rame, taches = rameServices.get_rame_info(num_serie, with_details)
     return _build_rame_with_taches_representation(rame, taches)
 
 
-@rame_controller.route("/api/v1/rames/<num_serie>/actions", methods=['GET'])
+@rame_controller.route("/rames/<num_serie>/actions", methods=['GET'])
 def get_rame_actions(num_serie: str):
     return [build_action(action) for action in actionServices.get_actions(num_serie)]
 
 
-@rame_controller.route("/api/v1/rames/<num_serie>/actions", methods=['POST'])
+@rame_controller.route("/rames/<num_serie>/actions", methods=['POST'])
 def create_rame_action(num_serie: str):
     data = request.get_json(force=False)
     action = data.get('action')

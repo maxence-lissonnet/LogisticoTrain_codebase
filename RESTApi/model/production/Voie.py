@@ -7,7 +7,7 @@ __all__ = ['Voie']
 
 
 class Voie(Base):
-    __tablename__ = 'voies'
+    __tablename__ = 'Voie'
 
     num_voie: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
     interdite: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

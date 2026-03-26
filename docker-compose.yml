@@ -4,13 +4,14 @@ services:
   sqldatabase:
     image: mariadb:11
     restart: always
-    healthcheck: 
+    healthcheck:
       test: [ "CMD", "/usr/local/bin/healthcheck.sh", "--connect" ]
       interval: 10s
       timeout: 10s
       retries: 10
     environment:
       - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/identifiant-sql-secrets
+      - MARIADB_DATABASE=logistico_train
     volumes:
       - sqldb-data:/var/lib/mysql
       - ./initialisation_db:/docker-entrypoint-initdb.d:ro
@@ -23,7 +24,7 @@ services:
     image: mongo:6.0
     restart: always
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: [ "CMD-SHELL", "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/test --quiet" ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -68,26 +69,37 @@ services:
   broker:
     image: rabbitmq:3.12-management-alpine
     container_name: logistico-broker
+    restart: always
+    command: >
+      sh -c "rabbitmq-plugins enable rabbitmq_stomp &&
+            rabbitmq-server &
+            sh /run/secrets/rabbitmq_init &&
+            wait"    
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      - RABBITMQ_DEFAULT_USER=rabbituser2403
+      - RABBITMQ_DEFAULT_PASS=rabbitpassword0579
     networks:
       - broker-net
-    healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-    restart: always
-    environment:
-      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_stomp tcp_listeners [6163]"
     volumes:
       - broker-data:/var/lib/rabbitmq
+      - ./secrets/rabbitmq.conf:/etc/rabbitmq.conf:ro
     secrets:
       - rabbit_user
       - rabbit_password
+      - rabbitmq_init
 
   restapi:
     build: ./RESTApi
     container_name: logistico-restapi
     restart: always
+    environment:
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=5001
     depends_on:
       sqldatabase:
         condition: service_healthy
@@ -96,6 +108,8 @@ services:
     networks:
       - db-net
       - frontend-net
+    ports:
+      - "5001:5001"
     secrets:
       - db_prod_creds
       - db_history_creds
@@ -105,7 +119,7 @@ services:
     container_name: logistico-wsapi
     restart: always
     working_dir: /workspace
-    command: ["sh", "-lc", "mvn -q -DskipTests spring-boot:run -Dspring-boot.run.arguments=--spring.config.location=file:/config/application.properties"]
+    command: [ "sh", "-lc", "mvn -q -DskipTests spring-boot:run -Dspring-boot.run.arguments=--spring.config.location=file:/config/application.properties" ]
     depends_on:
       sqldatabase:
         condition: service_healthy
@@ -120,8 +134,10 @@ services:
       - ./secrets/wsapi/application.properties:/config/application.properties:ro
     networks:
       - db-net
-      - mqt-net
+      - broker-net
       - frontend-net
+    ports:
+      - "8080:8080"
 
   webapp:
     build:
@@ -129,10 +145,10 @@ services:
       dockerfile: Dockerfile
     image: logistico-webapp-builder
     container_name: logistico-webapp
-    profiles: ["build"]
+    profiles: [ "build" ]
     user: root
     working_dir: /workspace
-    command: ["sh", "-lc", "npm ci --legacy-peer-deps && PUBLIC_PATH=/ API_BASE_URL=/api RT_API_BASE_URL=/wsapi npm run build"]
+    command: [ "sh", "-lc", "npm ci --legacy-peer-deps && PUBLIC_PATH=/ API_EP_URI=/api/rest RT_API_EP_URI=/wsapi npm run build" ]
     volumes:
       - ./app:/workspace
       - webapp-node-modules:/workspace/node_modules
@@ -148,14 +164,14 @@ services:
       wsapi:
         condition: service_started
     ports:
-      - "127.0.0.1:8080:80"
+      - "127.0.0.1:80:80"
     volumes:
       - webapp-build:/var/www/app:ro
       - ./vendorConfigurations/nginx.docker.conf:/etc/nginx/nginx.conf:ro
     networks:
       - frontend-net
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null || exit 1"]
+      test: [ "CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null || exit 1" ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -169,11 +185,12 @@ volumes:
   wsapi-m2:
   wsapi-target:
 
+
 networks:
   db-net:
   broker-net:
   frontend-net:
-  mqt-net:
+
 
 secrets:
   identifiant-sql-secrets:
@@ -183,9 +200,11 @@ secrets:
   mongo_express_config:
     file: ./secrets/mongo-express-config.js
   rabbit_user:
-    file: ./secrets/rabbit_user.txt
+    file: ./secrets/rabbit_user_secrets.txt
   rabbit_password:
-    file: ./secrets/rabbit_password.txt
+    file: ./secrets/rabbit_password_secrets.txt
+  rabbitmq_init:
+    file: ./secrets/rabbitmq-init.sh
   db_prod_creds:
     file: ./secrets/db_prod_creds_secrets.txt
   db_history_creds:

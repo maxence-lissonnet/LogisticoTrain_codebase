@@ -84,7 +84,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        StompWebSocketEndpointRegistration reg = registry.addEndpoint("/api/websocket");
+        StompWebSocketEndpointRegistration reg = registry.addEndpoint("/websocket");
         this.configureAllowedOriginForRegistration(reg);
         reg.withSockJS();
     }

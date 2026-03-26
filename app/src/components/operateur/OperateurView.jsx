@@ -23,6 +23,12 @@ function OperateurView() {
     numVoie: '', numVoieValid: null, creating: false, creationError: null,
   });
 
+  if (!mainStore) {
+    return (
+      <Alert variant="warning">Chargement en cours...</Alert>
+    );
+  }
+
   const handleCreateVoie = (evt) => {
     evt.preventDefault();
     if (newVoieState.creating) {
@@ -32,7 +38,7 @@ function OperateurView() {
     const formValid = form.checkValidity() !== false;
     const numVoie = parseInt(newVoieState.numVoie, 10);
     const numVoieValid = !Number.isNaN(numVoie)
-    && !mainStore.voies.some((v) => v.numVoie === numVoie);
+      && !mainStore.voies.some((v) => v.numVoie === numVoie);
     if (!formValid || !numVoieValid) {
       evt.stopPropagation();
       setNewVoieState((state) => ({
@@ -79,31 +85,31 @@ function OperateurView() {
             />
           ))}
           {mainStore.error && (
-          <Alert variant="danger">
-            <Alert.Heading>Erreur de requête</Alert.Heading>
-            <p>
-              {mainStore.error.error ?? 'Erreur inconnue'}
-              &nbsp;:&nbsp;
-              {mainStore.error.message ?? 'Aucun détails fourni sur cette erreur'}
-            </p>
-          </Alert>
+            <Alert variant="danger">
+              <Alert.Heading>Erreur de requête</Alert.Heading>
+              <p>
+                {mainStore.error.error ?? 'Erreur inconnue'}
+                &nbsp;:&nbsp;
+                {mainStore.error.message ?? 'Aucun détails fourni sur cette erreur'}
+              </p>
+            </Alert>
           )}
         </Col>
         <Col xs={12} md={6} xl={4}>
           <h5>Etat du dépot</h5>
           <ListGroup>
             {
-            mainStore.voies.map((voie) => (
-              <VoieListItem
-                key={voie.numVoie}
-                voie={voie}
-                rame={voie.rame}
-                onSelect={voie.rame ? () => mainStore.selectRame(voie.rame) : null}
-                onDelete={!voie.rame ? () => mainStore.deleteVoie(voie) : null}
-                onSwitchInterdite={!voie.rame ? () => mainStore.switchVoieInterdite(voie) : null}
-              />
-            ))
-          }
+              mainStore.voies.map((voie) => (
+                <VoieListItem
+                  key={voie.numVoie}
+                  voie={voie}
+                  rame={voie.rame}
+                  onSelect={voie.rame ? () => mainStore.selectRame(voie.rame) : null}
+                  onDelete={!voie.rame ? () => mainStore.deleteVoie(voie) : null}
+                  onSwitchInterdite={!voie.rame ? () => mainStore.switchVoieInterdite(voie) : null}
+                />
+              ))
+            }
           </ListGroup>
           <Form className="mt-3" onSubmit={handleCreateVoie} noValidate>
             <fieldset disabled={newVoieState.creating}>
@@ -134,12 +140,12 @@ function OperateurView() {
                 </Col>
               </Row>
               {newVoieState.creationError && (
-              <Row className="mt-2">
-                <Alert variant="danger">
-                  <Alert.Heading>Erreur de création</Alert.Heading>
-                  <p>{newVoieState.creationError?.message ?? 'Erreur inconnue'}</p>
-                </Alert>
-              </Row>
+                <Row className="mt-2">
+                  <Alert variant="danger">
+                    <Alert.Heading>Erreur de création</Alert.Heading>
+                    <p>{newVoieState.creationError?.message ?? 'Erreur inconnue'}</p>
+                  </Alert>
+                </Row>
               )}
             </fieldset>
           </Form>
@@ -147,18 +153,18 @@ function OperateurView() {
         </Col>
         <Col xs={12} md={6} xl={4}>
           {mainStore.selectedRame && (
-          <div className="position-sticky">
-            <Waiting
-              waiting={mainStore.selectedRame.isloading ? 'Chargement en cours' : null}
-              error={mainStore.selectedRame.loadingError
-                ? mainStore.selectedRame.loadingError.toString() : null}
-            >
-              <h5>Tâches de la rame</h5>
-              <TachesViewList taches={mainStore.selectedRame.taches} />
-              <h5 className="mt-5">Historique des actions</h5>
-              <HistoryActionsViewList actions={mainStore.selectedRame.actions} />
-            </Waiting>
-          </div>
+            <div className="position-sticky">
+              <Waiting
+                waiting={mainStore.selectedRame.isloading ? 'Chargement en cours' : null}
+                error={mainStore.selectedRame.loadingError
+                  ? mainStore.selectedRame.loadingError.toString() : null}
+              >
+                <h5>Tâches de la rame</h5>
+                <TachesViewList taches={mainStore.selectedRame.taches} />
+                <h5 className="mt-5">Historique des actions</h5>
+                <HistoryActionsViewList actions={mainStore.selectedRame.actions} />
+              </Waiting>
+            </div>
           )}
         </Col>
       </Row>

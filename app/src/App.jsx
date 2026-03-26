@@ -46,7 +46,12 @@ const router = createBrowserRouter([
           if (!user.isOperateur) {
             throw redirect('/');
           }
-          return STORE.switchMain(OperateurStore);
+          try {
+            return await STORE.switchMain(OperateurStore);
+          } catch (error) {
+            console.error('Unable to initialize operateur store', error);
+            return STORE.resetMain();
+          }
         },
       },
       {
@@ -58,7 +63,12 @@ const router = createBrowserRouter([
           if (!user.isTechnicien) {
             throw redirect('/');
           }
-          return STORE.switchMain(TechnicienStore);
+          try {
+            return await STORE.switchMain(TechnicienStore);
+          } catch (error) {
+            console.error('Unable to initialize technicien store', error);
+            return STORE.resetMain();
+          }
         },
       },
       {
@@ -85,7 +95,12 @@ const router = createBrowserRouter([
               if (!user.isConducteur) {
                 throw redirect('/');
               }
-              return STORE.switchMain(ConducteurEntreeStore);
+              try {
+                return await STORE.switchMain(ConducteurEntreeStore);
+              } catch (error) {
+                console.error('Unable to initialize conducteur entree store', error);
+                return STORE.resetMain();
+              }
             },
           },
           {
@@ -97,7 +112,12 @@ const router = createBrowserRouter([
               if (!user.isConducteur) {
                 throw redirect('/');
               }
-              return STORE.switchMain(ConducteurSortieStore);
+              try {
+                return await STORE.switchMain(ConducteurSortieStore);
+              } catch (error) {
+                console.error('Unable to initialize conducteur sortie store', error);
+                return STORE.resetMain();
+              }
             },
           },
         ],

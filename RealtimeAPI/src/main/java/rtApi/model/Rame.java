@@ -34,7 +34,7 @@ import java.util.Set;
  * @author Rémi Venant
  */
 @Entity
-@Table(name = "rames")
+@Table(name = "Rame")
 public class Rame {
 
     @Id
@@ -51,7 +51,8 @@ public class Rame {
     @Column(name = "conducteur_entrant", length = 50, nullable = false)
     private String conducteurEntrant;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE, CascadeType.PERSIST}, mappedBy = "rame", orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, cascade = { CascadeType.MERGE,
+            CascadeType.PERSIST }, mappedBy = "rame", orphanRemoval = true)
     private Set<Tache> taches = new HashSet<>();
 
     protected Rame() {

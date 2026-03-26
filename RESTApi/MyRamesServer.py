@@ -38,12 +38,11 @@ def create_server_apps(config_file_path: str, static_folder_path: str, log_level
     )
 
     # CORS setup for Flask
-    if app.config.get('ENABLE_CORS', False):
-        app.logger.warning("ENABLE CORS")
-        cors = CORS(app, resources={r"/api/*": {
-            "origins": ["http://localhost:3000", "http://127.0.0.1:3000", "moz-extension://*"],
-            "supports_credentials": True
-        }})
+    app.logger.warning("FORCING CORS ENABLED")
+    CORS(app, resources={r"/*": {
+        "origins": ["http://localhost", "http://127.0.0.1"],
+        "supports_credentials": True  # C'EST LA CLÉ : doit être True
+    }})
 
     # Production DB Setup
     prod_db_dao = ProductionDbDAO(app.config)
@@ -55,10 +54,9 @@ def create_server_apps(config_file_path: str, static_folder_path: str, log_level
     history_db_dao.open()
 
     # REST Controllers setup
-    app.register_blueprint(error_handler)
-    app.register_blueprint(voie_controller)
-    app.register_blueprint(rame_controller)
-    app.register_blueprint(action_controller)
+    app.register_blueprint(voie_controller, url_prefix='/api/rest')
+    app.register_blueprint(rame_controller, url_prefix='/api/rest')
+    app.register_blueprint(action_controller, url_prefix='/api/rest')
 
     # Register teardown processing when client session end
     @app.teardown_appcontext
@@ -70,8 +68,8 @@ def create_server_apps(config_file_path: str, static_folder_path: str, log_level
 
 
 def start_server(app: Flask):
-    host = app.config.get('SERVER_HOST', '127.0.0.1')
-    port = app.config.get('SERVER_PORT', 5000)
+    host = app.config.get('SERVER_HOST', '0.0.0.0')
+    port = app.config.get('SERVER_PORT', 5001)
     debug = app.config.get('DEBUG', False)
     app.logger.info("Start Flask-socketio server on host {} and port {}".format(host, port))
     if debug:

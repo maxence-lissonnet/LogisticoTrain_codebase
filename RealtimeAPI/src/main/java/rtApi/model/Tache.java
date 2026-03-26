@@ -32,7 +32,7 @@ import java.util.Objects;
  * @author Rémi Venant
  */
 @Entity
-@Table(name = "taches")
+@Table(name = "Tache")
 public class Tache {
 
     @EmbeddedId

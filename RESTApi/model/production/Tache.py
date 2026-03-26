@@ -7,7 +7,7 @@ __all__ = ['Tache']
 
 
 class Tache(Base):
-    __tablename__ = 'taches'
+    __tablename__ = 'Tache'
 
     num_serie: Mapped[str] = mapped_column(ForeignKey("rames.num_serie"), primary_key=True)
     num_tache: Mapped[int] = mapped_column(Integer, primary_key=True)

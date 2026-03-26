@@ -26,7 +26,7 @@ def build_action(action: HistoryAction):
     return d
 
 
-@action_controller.route("/api/v1/actions", methods=['GET'])
+@action_controller.route("/actions", methods=['GET'])
 def get_actions():
     raw_limit = request.args.get('limit', '10')
     try:

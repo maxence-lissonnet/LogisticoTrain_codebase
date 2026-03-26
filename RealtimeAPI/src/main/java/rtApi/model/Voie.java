@@ -28,7 +28,7 @@ import jakarta.persistence.Table;
  * @author Rémi Venant
  */
 @Entity
-@Table(name = "voies")
+@Table(name = "Voie")
 public class Voie {
 
     @Id

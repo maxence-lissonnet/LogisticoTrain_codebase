@@ -7,8 +7,8 @@ const packageInfo = require('./package.json'); // info générale de l'app
 const babelConfig = require('./babel.config'); // Info de config de babel
 
 const PUBLIC_PATH = '/'; // url de base de l'appli
-const API_BASE_URL = 'http://127.0.0.1:5001/api/v1';
-const RT_API_BASE_URL = 'http://127.0.0.1:8080/api';
+const API_BASE_URL = '/api';
+const RT_API_BASE_URL = '/wsapi';
 
 module.exports = {
   mode: 'development',
@@ -107,7 +107,7 @@ module.exports = {
   },
   devtool: 'inline-source-map',
   devServer: {
-    port: 3000,
+    port: 3001,
     host: 'localhost', // Accessible uniquement d'une ip localhost (4 ou 6)
     historyApiFallback: true, // Evite d'afficher une page 404 plutot que la page index.html
     // quand on utilie HTML5 History API
