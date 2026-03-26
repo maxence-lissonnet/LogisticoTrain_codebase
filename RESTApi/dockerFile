@@ -1,0 +1,15 @@
+FROM python:3.11
+WORKDIR /app
+
+# On copie d'abord les dépendances [cite: 137]
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# On copie tout le contenu du dossier RESTApi vers /app [cite: 133]
+COPY . .
+
+# On force les droits d'exécution et on vérifie la présence du fichier
+RUN chmod +x start-server.sh && ls -l start-server.sh
+
+# Utilisation de la forme "exécutable" pour CMD
+CMD ["/bin/sh", "./start-server.sh"]

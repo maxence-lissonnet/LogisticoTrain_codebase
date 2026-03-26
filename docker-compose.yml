@@ -1,4 +1,5 @@
 services:
+# <=================================== Partie Base de données ===================================>
   sqldatabase:
     image: mariadb:11
     restart: always
@@ -35,7 +36,7 @@ services:
     secrets :
       - identifiant-nosql-secrets
 
-# Partie Soutien au dev et à l'admin
+# <=================================== Partie Soutien au dev et à l'admin ===================================>
   phpmyadmin:
     image: phpmyadmin:latest
     profiles: ["dev-tool"] 
@@ -61,14 +62,107 @@ services:
     secrets:
       - source: mongo_express_config
         target: /app/config.js
+  
+  broker:
+    image: rabbitmq:3.12-management 
+    restart: always 
+    networks:
+      - brocker_network 
+    environment:
+      - RABBITMQ_DEFAULT_USER=/run/secrets/broker_user
+      - RABBITMQ_DEFAULT_PASS=/run/secrets/broker_password   
+    secrets:
+      - broker_user
+      - broker_password
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    command: 
+      sh -c "rabbitmq-plugins enable --offline rabbitmq_stomp && rabbitmq-server"
 
+  # <=================================== Partie Backends ===================================>
+  restapi:
+    build: ./RESTApi
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      - DB_HOST=sqldatabase  
+      - DB_PORT=3306
+      - MYSQL_HOST=sqldatabase
+      - SQL_DATABASE_HOST=sqldatabase
+      - PORT=5001
+    networks:
+      db-net:
+      front-net:
+        aliases:
+          - restapi.fr
+    depends_on:
+      sqldatabase:
+        condition: service_healthy
+  
+  wsapi:
+    image: maven:3.9-eclipse-temurin-21-alpine
+    container_name: logistico_wsapi
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./RealTimeApi:/app
+      - maven-cache:/root/.m2      
+    networks:
+      db-net:              
+      brocker_network:     
+      front-net:
+        aliases:
+          - wsapi
+    ports:
+      - "8080:8080"
+    secrets:
+      - identifiant-nosql-secrets
+      - identifiant-sql-secrets
+      - broker_password
+    depends_on:
+      sqldatabase:
+        condition: service_healthy
+      nosqldatabase:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    command: mvn spring-boot:run
+  
+  # <=================================== Partie Frontend ===================================>
+  webapp:
+    image: node:20-alpine  
+    container_name: logistico_webapp
+    working_dir: /app
+    volumes:
+      - ./app:/app
+    command: sh -c "npm install && npm run build"
+  front:
+    image: nginx:stable-alpine
+    container_name: logistico_front
+    ports:
+      - "80:80"
+    volumes:
+      - ./app/build:/var/www/app:ro      
+      - ./vendorConfigurations/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - front-net
 
+# <=================================== Volumes, Réseaux et Secrets ===================================>
 volumes:
   sqldb-data:
   nosqldb-data:
+  maven-cache:
+  web-content:
+
 
 networks:
   db-net:
+  brocker_network:
+  front-net:
 
 secrets:
   identifiant-sql-secrets:
@@ -77,3 +171,8 @@ secrets:
     file: ./secrets/identifiant-nosql-secrets.txt
   mongo_express_config:
     file: ./secrets/mongo-express-config.js
+  broker_user:
+    file: ./secrets/broker_user.txt
+  broker_password:
+    file: ./secrets/broker_password.txt
+  

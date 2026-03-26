@@ -1,7 +1,7 @@
 # BASE SERVER CONFIGURATION
 # General
 # use 0.0.0.0:5000 for a docker deployment
-SERVER_HOST = '127.0.0.1'
+SERVER_HOST = '0.0.0.0'
 SERVER_PORT = 5001
 DEBUG = False
 # CORS Configuration
@@ -9,19 +9,19 @@ ENABLE_CORS = True  # Enable CORS compliancy only if the front app is served by 
 
 # SQL PRODUCTION DB CONNECTION CONFIGURATION
 SQLDB_SETTINGS = {
-    "db": 'myrames-prod-db',  # mandatory
-    "user": 'mariaUsr',  # mandatory
-    "password": 'mariaPwd',  # mandatory
-    "host": '127.0.0.1',  # default localhost
+    "db": 'logistico_train',  # mandatory
+    "user": 'root',  # mandatory
+    "password": 'df85_Klo92_admin_sql',  # mandatory
+    "host": 'sqldatabase',  # default localhost
     "port": 3306  # default 3306
 }
 
 # MONGODB HISOTRY DB CONNECTION CONFIGURATION
 MONGODB_SETTINGS = {
     "db": "history-db",  # Mandatory
-    "host": "localhost",  # default localhost
+    "host": "nosqldatabase",  # default localhost
     "port": 27017,  # default 27017
-    "username": "mongoUsr",  # Optional
-    "password": "mongoPass",  # Optional
+    "username": "admin",  # Optional
+    "password": "admin123",  # Optional
     "authentication_source": "admin"  # default is the db
 }
