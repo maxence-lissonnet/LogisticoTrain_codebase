@@ -11,7 +11,7 @@ class Rame(Base):
 
     num_serie: Mapped[str] = mapped_column(String(12), primary_key=True)
     type_rame: Mapped[str] = mapped_column(String(50), nullable=False)
-    voie: Mapped[int] = mapped_column(ForeignKey("voies.num_voie"), unique=True, nullable=True)
+    voie: Mapped[int] = mapped_column(ForeignKey("Voie.num_voie"), unique=True, nullable=True)
     conducteur_entrant: Mapped[str] = mapped_column(String(50), nullable=False)
 
     def __init__(self, num_serie: str, type_rame: str, voie: int):
